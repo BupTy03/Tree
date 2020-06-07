@@ -223,8 +223,8 @@ void traverse_preorder(NodeIterator first, NodeIterator last, Func func)
 	while (!nodes.empty())
 	{
 		auto current = nodes.front();
-		func(*current);
 		nodes.pop_front();
+		func(*current);
 		nodes.insert(std::cbegin(nodes), std::begin(current), std::end(current));
 	}
 }
@@ -237,8 +237,8 @@ void traverse_postorder(NodeIterator first, NodeIterator last, Func func)
 	while (!nodes.empty())
 	{
 		auto current = nodes.front();
-		func(*current);
 		nodes.pop_front();
+		func(*current);
 		nodes.insert(std::cend(nodes), std::begin(current), std::end(current));
 	}
 }

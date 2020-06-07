@@ -1,4 +1,5 @@
 #include "tree.hpp"
+#include "binary_tree.hpp"
 
 #include <iostream>
 #include <iterator>
@@ -20,6 +21,12 @@ void traverse(Node currentNode, int nestingLevel = 0)
 		traverse(child, nestingLevel);
 }
 
+struct Printer
+{
+	void operator()(const std::string& elem) const { std::cout << elem << '\n'; }
+};
+
+
 void test_tree()
 {
 	tree<std::string> tr;
@@ -36,15 +43,21 @@ void test_tree()
 	it->begin()->emplace_child("6");
 	it->begin()[1]->emplace_child("7");
 
-	auto printElem = [](const std::string& elem) { std::cout << elem << '\n'; };
-	traverse_preorder(root.begin(), root.end(), printElem);
+	traverse_preorder(root.begin(), root.end(), Printer());
 	std::cout << "\n=\n\n";
-	traverse_postorder(root.begin(), root.end(), printElem);
+	traverse_postorder(root.begin(), root.end(), Printer());
 }
 
 
 int main()
 {
-	test_tree();
+	binary_tree<std::string> btree("root");
+
+	auto r = btree.root();
+	btree.emplace_left(r, "left");
+	btree.emplace_right(r, "right");
+
+	traverse_inorder(btree, r, Printer());
+
 	return 0;
 }
