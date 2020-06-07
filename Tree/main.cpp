@@ -20,8 +20,7 @@ void traverse(Node currentNode, int nestingLevel = 0)
 		traverse(child, nestingLevel);
 }
 
-
-int main()
+void test_tree()
 {
 	tree<std::string> tr;
 	auto root = tr.root();
@@ -37,8 +36,15 @@ int main()
 	it->begin()->emplace_child("6");
 	it->begin()[1]->emplace_child("7");
 
-	traverse_preorder(root.begin(), root.end(), [](const std::string& elem) { std::cout << elem << '\n'; });
+	auto printElem = [](const std::string& elem) { std::cout << elem << '\n'; };
+	traverse_preorder(root.begin(), root.end(), printElem);
 	std::cout << "\n=\n\n";
-	traverse_postorder(root.begin(), root.end(), [](const std::string& elem) { std::cout << elem << '\n'; });
+	traverse_postorder(root.begin(), root.end(), printElem);
+}
+
+
+int main()
+{
+	test_tree();
 	return 0;
 }
