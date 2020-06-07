@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <limits>
+#include <deque>
 
 
 namespace tree_impl
@@ -94,6 +95,8 @@ public:
 			return pTree_->emplace_child_node(index(), std::forward<Args>(args)...);
 		}
 
+		node* operator->() { return this; }
+
 		const T& operator*() const
 		{
 			if (is_root())
@@ -102,7 +105,6 @@ public:
 			return static_cast<inner_data_node&>(pTree_->node_at(index())).value();
 		}
 
-		node* operator->() { return this; }
 		T& operator*() { return const_cast<T&>(const_cast<const node*>(this)->operator*()); }
 
 		class node_iterator
@@ -116,6 +118,12 @@ public:
 				assert(pTree_ != nullptr);
 			}
 		public:
+			using iterator_category = std::bidirectional_iterator_tag;
+			using value_type = node;
+			using difference_type = std::ptrdiff_t;
+			using pointer = node;
+			using reference = node;
+
 			node operator*() { return node(pTree_, *it_); }
 			node operator->() { return this->operator*(); }
 
@@ -125,8 +133,8 @@ public:
 			node_iterator& operator--() { --it_; return *this; }
 			node_iterator operator--(int) { auto it = *this; --it_; return *it; }
 
-			node_iterator& operator+=(std::ptrdiff_t n) { return it_ += n; }
-			node_iterator& operator-=(std::ptrdiff_t n) { return it_ -= n; }
+			node_iterator& operator+=(std::ptrdiff_t n) { it_ += n; return *this; }
+			node_iterator& operator-=(std::ptrdiff_t n) { it_ -= n; return *this; }
 
 			friend node_iterator operator+(node_iterator it, std::ptrdiff_t n) { it += n; return it; }
 			friend node_iterator operator-(node_iterator it, std::ptrdiff_t n) { it -= n; return it;}
@@ -205,3 +213,18 @@ private:
 	inner_root_node rootNode_;
 	std::vector<inner_data_node> nodes_;
 };
+
+
+template<typename NodeIterator, typename Func>
+void traverse_preorder(NodeIterator first, NodeIterator last, Func func)
+{
+	using NodeType = typename std::iterator_traits<NodeIterator>::value_type;
+	std::deque<NodeType> nodes(first, last);
+	while (!nodes.empty())
+	{
+		auto current = nodes.front();
+		func(*current);
+		nodes.pop_front();
+		nodes.insert(std::cbegin(nodes), std::begin(current), std::end(current));
+	}
+}
