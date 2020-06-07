@@ -228,3 +228,17 @@ void traverse_preorder(NodeIterator first, NodeIterator last, Func func)
 		nodes.insert(std::cbegin(nodes), std::begin(current), std::end(current));
 	}
 }
+
+template<typename NodeIterator, typename Func>
+void traverse_postorder(NodeIterator first, NodeIterator last, Func func)
+{
+	using NodeType = typename std::iterator_traits<NodeIterator>::value_type;
+	std::deque<NodeType> nodes(first, last);
+	while (!nodes.empty())
+	{
+		auto current = nodes.front();
+		func(*current);
+		nodes.pop_front();
+		nodes.insert(std::cend(nodes), std::begin(current), std::end(current));
+	}
+}

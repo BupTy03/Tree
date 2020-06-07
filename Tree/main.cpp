@@ -37,7 +37,8 @@ int main()
 	it->begin()->emplace_child("6");
 	it->begin()[1]->emplace_child("7");
 
-	//traverse_preorder(root.begin(), root.end(), [](const std::string& elem) { std::cout << elem << '\n'; });
-	traverse(root);
+	traverse_preorder(root.begin(), root.end(), [](const std::string& elem) { std::cout << elem << '\n'; });
+	std::cout << "\n=\n\n";
+	traverse_postorder(root.begin(), root.end(), [](const std::string& elem) { std::cout << elem << '\n'; });
 	return 0;
 }
