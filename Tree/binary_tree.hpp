@@ -1,5 +1,7 @@
 #pragma once
 
+#include "registry.hpp"
+
 #include <queue>
 #include <vector>
 #include <limits>
@@ -79,7 +81,6 @@ public:
 	public:
 		std::size_t index() const { return nodeIndex_; }
 		bool is_null() const { return nodeIndex_ == inner_node::null_node_index; }
-		bool is_root() const { return nodeIndex_ == 0; }
 
 		static node null_node() { return node(inner_node::null_node_index); }
 
@@ -100,15 +101,18 @@ public:
 
 public:
 	template<typename... Args>
-	explicit binary_tree(Args&&... args) { nodes_.emplace_back(std::forward<Args>(args)...); }
+	explicit binary_tree(Args&&... args) 
+		: rootNode_{0}
+	{ 
+		rootNode_ = node(nodes_.emplace(std::forward<Args>(args)...)); 
+	}
 
-	node root() { return node(0); }
+	node root() { return rootNode_; }
 
 	template<typename... Args>
 	node emplace_left(const node& parent, Args&&... args)
 	{ 
-		nodes_.emplace_back(std::forward<Args>(args)...);
-		const auto lastIndex = nodes_.size() - 1;
+		const auto lastIndex = nodes_.emplace(std::forward<Args>(args)...);
 		inner(parent).set_left_index(lastIndex);
 		return node(lastIndex);
 	}
@@ -120,8 +124,7 @@ public:
 	template<typename... Args>
 	node emplace_right(const node& parent, Args&&... args)
 	{
-		nodes_.emplace_back(std::forward<Args>(args)...);
-		const auto lastIndex = nodes_.size() - 1;
+		const auto lastIndex = nodes_.emplace(std::forward<Args>(args)...);
 		inner(parent).set_right_index(lastIndex);
 		return node(lastIndex);
 	}
@@ -148,14 +151,15 @@ public:
 private:
 	void check_null_node(const node& n) const { if (n.is_null()) throw std::runtime_error("node was null");  }
 
-	const inner_data_node& inner(const node& n) const { check_null_node(n); return nodes_.at(n.index()); }
+	const inner_data_node& inner(const node& n) const { check_null_node(n); return nodes_.value(n.index()); }
 	inner_data_node& inner(const node& n)
 	{
 		return const_cast<inner_data_node&>(const_cast<const binary_tree*>(this)->inner(n));
 	}
 
 private:
-	std::vector<inner_data_node> nodes_;
+	node rootNode_;
+	registry<inner_data_node> nodes_;
 };
 
 
