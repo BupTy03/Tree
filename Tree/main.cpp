@@ -53,11 +53,34 @@ int main()
 {
 	binary_tree<std::string> btree("root");
 
-	auto r = btree.root();
-	btree.emplace_left(r, "left");
-	btree.emplace_right(r, "right");
+	auto root = btree.root();
+	auto left = btree.emplace_left(root, "left");
+	btree.emplace_left(left, "left-left");
+	btree.emplace_right(left, "left-right");
 
-	traverse_inorder(btree, r, Printer());
+	auto right = btree.emplace_right(root, "right");
+	btree.emplace_left(right, "right-left");
+	btree.emplace_right(right, "right-right");
 
+	std::cout << "====== traverse_preorder ======\n";
+	traverse_preorder(btree, root, Printer());
+
+	std::cout << "\n====== traverse_preorder_recursive ======\n";
+	traverse_preorder_recursive(btree, root, Printer());
+
+	std::cout << "\n====== traverse_inorder ======\n";
+	traverse_inorder(btree, root, Printer());
+
+	std::cout << "\n====== traverse_inorder_recursive ======\n";
+	traverse_inorder_recursive(btree, root, Printer());
+
+	std::cout << "\n====== traverse_postorder ======\n";
+	traverse_postorder(btree, root, Printer());
+
+	std::cout << "\n====== traverse_postorder_recursive ======\n";
+	traverse_postorder_recursive(btree, root, Printer());
+
+	std::cout << "\n====== traverse_depth_first ======\n";
+	traverse_depth_first(btree, root, Printer());
 	return 0;
 }
