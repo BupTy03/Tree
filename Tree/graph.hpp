@@ -101,7 +101,7 @@ public:
 	}
 
 	const T& value_of(const graph_node& n) const { return nodes_.value(n.index()).value(); }
-	T& value_of(const graph_node& n) { return const_cast<T&>(const_cast<const graph*>(this)->value_of(n)); }
+	T& value_of(const graph_node& n) { return nodes_.value(n.index()).value(); }
 
 	node_iterator begin(const graph_node& n) { return std::begin(node_at(n.index()).neighbors()); }
 	node_iterator end(const graph_node& n) { return std::end(node_at(n.index()).neighbors()); }
@@ -112,12 +112,56 @@ public:
 	const_node_iterator begin(const graph_node& n) const { return cbegin(n); }
 	const_node_iterator end(const graph_node& n) const { return cend(n); }
 
+
+	class node_range
+	{
+		friend graph;
+
+		explicit node_range(graph* pGraph, graph_node n)
+			: pGraph_{pGraph}
+			, node_{n}
+		{ assert(pGraph_ != nullptr); }
+
+	public:
+		node_iterator begin() { return pGraph_->begin(node_); }
+		node_iterator end() { return pGraph_->end(node_); }
+
+		const_node_iterator cbegin() const { return pGraph_->cbegin(node_); }
+		const_node_iterator cend() const { return pGraph_->cend(node_); }
+
+	private:
+		graph* pGraph_;
+		graph_node node_;
+	};
+
+	class const_node_range
+	{
+		friend graph;
+
+		explicit const_node_range(graph* pGraph, graph_node n)
+			: pGraph_{ pGraph }
+			, node_{ n }
+		{ assert(pGraph_ != nullptr); }
+
+	public:
+		const_node_iterator cbegin() const { return pGraph_->cbegin(node_); }
+		const_node_iterator cend() const { return pGraph_->cend(node_); }
+
+		const_node_iterator begin() const { return pGraph_->begin(node_); }
+		const_node_iterator end() const { return pGraph_->end(node_); }
+
+	private:
+		graph* pGraph_;
+		graph_node node_;
+	};
+
+
+	node_range neighbors_of(const graph_node& n) { return node_range(this, n); }
+	const_node_range neighbors_of(const graph_node& n) const { return const_node_range(this, n); }
+
 private:
 	const inner_node& node_at(std::size_t index) const { return nodes_.value(index); }
-	inner_node& node_at(std::size_t index)
-	{
-		return const_cast<inner_node&>(const_cast<const graph*>(this)->node_at(index));
-	}
+	inner_node& node_at(std::size_t index) { return nodes_.value(index); }
 
 private:
 	registry<inner_data_node> nodes_;

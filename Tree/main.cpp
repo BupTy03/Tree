@@ -69,8 +69,8 @@ int main()
 	auto b2 = gr.emplace_neigbor(center, "block2");
 	auto b3 = gr.emplace_neigbor(center, "block3");
 
-	std::for_each(gr.cbegin(center), gr.cend(center), 
-		[&gr](const graph_node& n) { std::cout << "node: " << gr.value_of(n) << '\n'; });
+	for(const auto n : gr.neighbors_of(center))
+		std::cout << "node: " << gr.value_of(n) << '\n';
 
 	return 0;
 }
