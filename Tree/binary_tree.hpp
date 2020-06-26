@@ -6,6 +6,7 @@
 #include <vector>
 #include <limits>
 #include <cassert>
+#include <utility>
 #include <algorithm>
 
 
@@ -86,7 +87,7 @@ public:
 		rootNode_ = node(nodes_.emplace(std::forward<Args>(args)...)); 
 	}
 
-	node root() { return rootNode_; }
+	node root() const { return rootNode_; }
 
 	template<typename... Args>
 	node emplace_left(const node& parent, Args&&... args)
@@ -97,7 +98,7 @@ public:
 		return node(current);
 	}
 
-	node left(const node& n) { return node(inner(n).left_index()); }
+	node left(const node& n) const { return node(inner(n).left_index()); }
 	void reset_left(const node& n) { inner(n).reset_left_index(); }
 	void set_left(const node& parent, const node& left) { inner(parent).set_left_index(left.index()); }
 
@@ -110,7 +111,7 @@ public:
 		return node(current);
 	}
 
-	node right(const node& n) { return node(inner(n).right_index()); }
+	node right(const node& n) const { return node(inner(n).right_index()); }
 	void reset_right(const node& n) { inner(n).reset_right_index(); }
 	void set_right(const node& parent, const node& right) { inner(parent).set_right_index(right.index()); }
 
@@ -133,12 +134,12 @@ private:
 
 
 template<typename T, typename Func>
-void traverse_preorder(binary_tree<T>& tree, const typename binary_tree<T>::node& rootNode, Func func)
+void traverse_preorder(const binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
 {
 	using node_type = typename binary_tree<T>::node;
 
 	std::vector<node_type> nodes;
-	nodes.emplace_back(rootNode);
+	nodes.emplace_back(root);
 
 	while (!nodes.empty())
 	{
@@ -148,192 +149,242 @@ void traverse_preorder(binary_tree<T>& tree, const typename binary_tree<T>::node
 		if (current.is_null())
 			continue;
 
-		func(tree.value(current));
+		func(tr.value(current));
 
-		nodes.emplace_back(tree.right(current));
-		nodes.emplace_back(tree.left(current));
+		nodes.emplace_back(tr.right(current));
+		nodes.emplace_back(tr.left(current));
 	}
 }
 
 template<typename T, typename Func>
-void traverse_preorder_recursive(binary_tree<T>& tree, const typename binary_tree<T>::node& rootNode, Func func)
+void traverse_preorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
 {
-	if (rootNode.is_null()) return;
+	traverse_preorder(const_cast<const binary_tree<T>&>(tr), root,
+		[f = std::forward<Func>(func) ](const T& value) { f(const_cast<T&>(value)); });
+}
 
-	func(tree.value(rootNode));
-	traverse_preorder_recursive(tree, tree.left(rootNode), func);
-	traverse_preorder_recursive(tree, tree.right(rootNode), func);
+
+template<typename T, typename Func>
+void traverse_preorder_recursive(const binary_tree<T>& tr, typename binary_tree<T>::node root, Func func)
+{
+	if (root.is_null()) return;
+
+	func(tr.value(root));
+	traverse_preorder_recursive(tr, tr.left(root), func);
+	traverse_preorder_recursive(tr, tr.right(root), func);
 }
 
 template<typename T, typename Func>
-void morris_traversal_preorder(binary_tree<T>& tree, typename binary_tree<T>::node rootNode, Func func)
+void traverse_preorder_recursive(binary_tree<T>& tr, typename binary_tree<T>::node root, Func func)
 {
-	while (!rootNode.is_null())
+	traverse_preorder_recursive(const_cast<const binary_tree<T>&>(tr), root, 
+		[func](const T& value) { func(const_cast<T&>(value)); });
+}
+
+
+template<typename T, typename Func>
+void morris_traversal_preorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Func func)
+{
+	while (!root.is_null())
 	{
-		auto left = tree.left(rootNode);
+		auto left = tr.left(root);
 		if (left.is_null())
 		{
-			func(tree.value(rootNode));
-			rootNode = tree.right(rootNode);
+			func(tr.value(root));
+			root = tr.right(root);
 		}
 		else
 		{
 			// Find inorder predecessor
 			auto predecessor = left;
-			auto right = tree.right(predecessor);
-			while (!(right.is_null() || right == rootNode))
+			auto right = tr.right(predecessor);
+			while (!(right.is_null() || right == root))
 			{
 				predecessor = right;
-				right = tree.right(right);
+				right = tr.right(right);
 			}
 			
-			if (right == rootNode)
+			if (right == root)
 			{
 				// If the right child of inorder predecessor 
 				// already points to this node
-				tree.reset_right(predecessor);
-				rootNode = tree.right(rootNode);
+				tr.reset_right(predecessor);
+				root = tr.right(root);
 			}
 			else
 			{
 				// If right child doesn't point to this node, then print this  
 				// node and make right child point to this node
-				func(tree.value(rootNode));
-				tree.set_right(predecessor, rootNode);
-				rootNode = tree.left(rootNode);
+				func(tr.value(root));
+				tr.set_right(predecessor, root);
+				root = tr.left(root);
 			}
 		}
 	}
 }
 
+
 template<typename T, typename Func>
-void traverse_inorder(binary_tree<T>& tree, typename binary_tree<T>::node current, Func func)
+void traverse_inorder(const binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
 {
 	using node_type = typename binary_tree<T>::node;
 
 	std::vector<node_type> nodes;
-	while (!(current.is_null() && nodes.empty()))
+	while (!(root.is_null() && nodes.empty()))
 	{
 		if (!nodes.empty())
 		{
-			current = nodes.back();
+			root = nodes.back();
 			nodes.pop_back();
 
-			func(tree.value(current));
+			func(tr.value(root));
 
-			current = tree.right(current);
+			root = tr.right(root);
 		}
 
-		while (!current.is_null())
+		while (!root.is_null())
 		{
-			nodes.emplace_back(current);
-			current = tree.left(current);
+			nodes.emplace_back(root);
+			root = tr.left(root);
 		}
 	}
 }
 
 template<typename T, typename Func>
-void morris_traversal_inorder(binary_tree<T>& tree, typename binary_tree<T>::node rootNode, Func func)
+void traverse_inorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
 {
-	while (!rootNode.is_null())
+	traverse_inorder(const_cast<const binary_tree<T>&>(tr), root,
+		[f = std::forward<Func>(func)](const T& value) { f(const_cast<T&>(value)); });
+}
+
+
+template<typename T, typename Func>
+void morris_traversal_inorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Func func)
+{
+	while (!root.is_null())
 	{
-		auto left = tree.left(rootNode);
+		auto left = tr.left(root);
 		if (left.is_null())
 		{
-			func(tree.value(rootNode));
-			rootNode = tree.right(rootNode);
+			func(tr.value(root));
+			root = tr.right(root);
 		}
 		else
 		{
 			// Find the inorder predecessor of current
 			auto predecessor = left;
-			auto right = tree.right(predecessor);
-			while (!(right.is_null() || right == rootNode))
+			auto right = tr.right(predecessor);
+			while (!(right.is_null() || right == root))
 			{
 				predecessor = right;
-				right = tree.right(right);
+				right = tr.right(right);
 			}
 
 			if (right.is_null())
 			{
 				// Make current as the right child of its inorder predecessor
-				tree.set_right(predecessor, rootNode);
-				rootNode = tree.left(rootNode);
+				tr.set_right(predecessor, root);
+				root = tr.left(root);
 			}
 			else
 			{
 				// Revert the changes made in the 'if' part to restore
 				// the original tree i.e., fix the right child of predecessor
-				tree.reset_right(predecessor);
-				func(tree.value(rootNode));
-				rootNode = tree.right(rootNode);
+				tr.reset_right(predecessor);
+				func(tr.value(root));
+				root = tr.right(root);
 			}
 		}
 	}
 }
 
-template<typename T, typename Func>
-void traverse_inorder_recursive(binary_tree<T>& tree, const typename binary_tree<T>::node& rootNode, Func func)
-{
-	if (rootNode.is_null()) return;
 
-	traverse_inorder(tree, tree.left(rootNode), func);
-	func(tree.value(rootNode));
-	traverse_inorder(tree, tree.right(rootNode), func);
+template<typename T, typename Func>
+void traverse_inorder_recursive(const binary_tree<T>& tr, const typename binary_tree<T>::node& root, Func func)
+{
+	if (root.is_null()) return;
+
+	traverse_inorder(tr, tr.left(root), func);
+	func(tr.value(root));
+	traverse_inorder(tr, tr.right(root), func);
 }
 
 template<typename T, typename Func>
-void traverse_postorder(binary_tree<T>& tree, typename binary_tree<T>::node current, Func func)
+void traverse_inorder_recursive(binary_tree<T>& tr, const typename binary_tree<T>::node& root, Func func)
+{
+	traverse_inorder_recursive(const_cast<const binary_tree<T>&>(tr), root,
+		[func](const T& value) { func(const_cast<T&>(value)); });
+}
+
+
+template<typename T, typename Func>
+void traverse_postorder(const binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
 {
 	using node_type = typename binary_tree<T>::node;
 
 	std::vector<node_type> nodes;
-	while (!(current.is_null() && nodes.empty()))
+	while (!(root.is_null() && nodes.empty()))
 	{
 		if (!nodes.empty())
 		{
-			current = nodes.back();
+			root = nodes.back();
 			nodes.pop_back();
-			node_type right = tree.right(current);
+			node_type right = tr.right(root);
 			if (!nodes.empty() && right == nodes.back())
 			{
-				current = right;
+				root = right;
 				nodes.pop_back();
 			}
 			else
 			{
-				func(tree.value(current));
-				current = node_type::null_node();
+				func(tr.value(root));
+				root = node_type::null_node();
 			}
 		}
 
-		while (!current.is_null())
+		while (!root.is_null())
 		{
-			nodes.emplace_back(current);
-			node_type right = tree.right(current);
+			nodes.emplace_back(root);
+			node_type right = tr.right(root);
 			if (!right.is_null())
 			{
 				nodes.emplace_back(right);
-				nodes.emplace_back(current);
+				nodes.emplace_back(root);
 			}
 
-			current = tree.left(current);
+			root = tr.left(root);
 		}
 	}
 }
 
 template<typename T, typename Func>
-void traverse_postorder_recursive(binary_tree<T>& tree, const typename binary_tree<T>::node& rootNode, Func func)
+void traverse_postorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
 {
-	if (rootNode.is_null()) return;
+	traverse_postorder(const_cast<const binary_tree<T>&>(tr), root,
+		[f = std::forward<Func>(func)](const T& value) { f(const_cast<T&>(value)); });
+}
 
-	traverse_postorder_recursive(tree, tree.left(rootNode), func);
-	traverse_postorder_recursive(tree, tree.right(rootNode), func);
-	func(tree.value(rootNode));
+
+template<typename T, typename Func>
+void traverse_postorder_recursive(const binary_tree<T>& tr, typename binary_tree<T>::node root, Func func)
+{
+	if (root.is_null()) return;
+
+	traverse_postorder_recursive(tr, tr.left(root), func);
+	traverse_postorder_recursive(tr, tr.right(root), func);
+	func(tr.value(root));
 }
 
 template<typename T, typename Func>
-void traverse_depth_first(binary_tree<T>& tree, const typename binary_tree<T>::node& root, Func func)
+void traverse_postorder_recursive(binary_tree<T>& tr, typename binary_tree<T>::node root, Func func)
+{
+	traverse_postorder_recursive(const_cast<const binary_tree<T>&>(tr), root,
+		[func](const T& value) { func(const_cast<T&>(value)); });
+}
+
+
+template<typename T, typename Func>
+void traverse_depth_first(const binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
 {
 	using node_type = typename binary_tree<T>::node;
 
@@ -346,12 +397,20 @@ void traverse_depth_first(binary_tree<T>& tree, const typename binary_tree<T>::n
 		node_type current = children.front();
 		children.pop();
 
-		func(tree.value(current));
+		func(tr.value(current));
 
-		node_type left = tree.left(current);
+		node_type left = tr.left(current);
 		if (!left.is_null()) children.emplace(left);
 
-		node_type right = tree.right(current);
+		node_type right = tr.right(current);
 		if (!right.is_null()) children.emplace(right);
 	}
 }
+
+template<typename T, typename Func>
+void traverse_depth_first(binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
+{
+	traverse_depth_first(const_cast<const binary_tree<T>&>(tr), root,
+		[f = std::forward<Func>(func)](const T& value) { f(const_cast<T&>(value)); });
+}
+
