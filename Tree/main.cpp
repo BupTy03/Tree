@@ -40,11 +40,17 @@ void test_binary_tree()
 	std::cout << "====== traverse_preorder ======\n";
 	traverse_preorder(btree, root, Printer());
 
+	std::cout << "\n====== morris_traversal_preorder ======\n";
+	morris_traversal_preorder(btree, root, Printer());
+
 	std::cout << "\n====== traverse_preorder_recursive ======\n";
 	traverse_preorder_recursive(btree, root, Printer());
 
 	std::cout << "\n====== traverse_inorder ======\n";
 	traverse_inorder(btree, root, Printer());
+
+	std::cout << "\n====== morris_traversal_inorder ======\n";
+	morris_traversal_inorder(btree, root, Printer());
 
 	std::cout << "\n====== traverse_inorder_recursive ======\n";
 	traverse_inorder_recursive(btree, root, Printer());
@@ -59,8 +65,7 @@ void test_binary_tree()
 	traverse_depth_first(btree, root, Printer());
 }
 
-
-int main()
+void test_graph()
 {
 	graph<std::string> gr;
 
@@ -69,8 +74,13 @@ int main()
 	auto b2 = gr.emplace_neigbor(center, "block2");
 	auto b3 = gr.emplace_neigbor(center, "block3");
 
-	for(const auto n : gr.neighbors_of(center))
+	for (const auto n : gr.neighbors_of(center))
 		std::cout << "node: " << gr.value_of(n) << '\n';
+}
 
+
+int main()
+{
+	test_binary_tree();
 	return 0;
 }

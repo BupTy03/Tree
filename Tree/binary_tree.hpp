@@ -17,20 +17,6 @@ namespace binary_tree_impl
 	public:
 		static constexpr auto null_node_index = std::numeric_limits<std::size_t>::max();
 
-		inner_node()
-			: parent_{ null_node_index }
-			, left_{ null_node_index }
-			, right_{ null_node_index }
-		{}
-
-		explicit inner_node(std::size_t parent)
-			: parent_{parent}
-			, left_{ null_node_index }
-			, right_{ null_node_index }
-		{}
-
-		std::size_t parent_index() const { return parent_; }
-
 		std::size_t left_index() const { return left_; }
 		void set_left_index(std::size_t index) { left_ = index; }
 		void reset_left_index() { set_left_index(null_node_index); }
@@ -39,12 +25,9 @@ namespace binary_tree_impl
 		void set_right_index(std::size_t index) { right_ = index; }
 		void reset_right_index() { set_right_index(null_node_index); }
 
-		bool is_root() const { return parent_ == null_node_index; }
-
 	private:
-		std::size_t parent_;
-		std::size_t left_;
-		std::size_t right_;
+		std::size_t left_ = null_node_index;
+		std::size_t right_ = null_node_index;
 	};
 
 
@@ -70,8 +53,6 @@ namespace binary_tree_impl
 template<typename T>
 class binary_tree
 {
-	using inner_node = binary_tree_impl::inner_node;
-	using inner_data_node = binary_tree_impl::inner_data_node<T>;
 public:
 
 	class node
@@ -80,11 +61,9 @@ public:
 		explicit node(std::size_t index) : nodeIndex_{ index } {}
 	public:
 		std::size_t index() const { return nodeIndex_; }
-		bool is_null() const { return nodeIndex_ == inner_node::null_node_index; }
+		bool is_null() const { return nodeIndex_ == binary_tree_impl::inner_node::null_node_index; }
 
-		static node null_node() { return node(inner_node::null_node_index); }
-
-		operator bool() const { return !is_null(); }
+		static node null_node() { return node(binary_tree_impl::inner_node::null_node_index); }
 
 		friend bool operator<(const node& lhs, const node& rhs) { return lhs.nodeIndex_ < rhs.nodeIndex_; }
 		friend bool operator>(const node& lhs, const node& rhs) { return lhs.nodeIndex_ > rhs.nodeIndex_; }
@@ -112,38 +91,28 @@ public:
 	template<typename... Args>
 	node emplace_left(const node& parent, Args&&... args)
 	{ 
-		const auto lastIndex = nodes_.emplace(std::forward<Args>(args)...);
-		inner(parent).set_left_index(lastIndex);
-		return node(lastIndex);
+		check_null_node(parent);
+		const auto current = nodes_.emplace(std::forward<Args>(args)...);
+		inner(parent).set_left_index(current);
+		return node(current);
 	}
 
 	node left(const node& n) { return node(inner(n).left_index()); }
-	void reset_left(const node& n) { return node(inner(n).reset_left_index()); }
-	void set_left(const node& n, const node& left) { return node(inner(n).set_left_index(left)); }
+	void reset_left(const node& n) { inner(n).reset_left_index(); }
+	void set_left(const node& parent, const node& left) { inner(parent).set_left_index(left.index()); }
 
 	template<typename... Args>
 	node emplace_right(const node& parent, Args&&... args)
 	{
-		const auto lastIndex = nodes_.emplace(std::forward<Args>(args)...);
-		inner(parent).set_right_index(lastIndex);
-		return node(lastIndex);
+		check_null_node(parent);
+		const auto current = nodes_.emplace(std::forward<Args>(args)...);
+		inner(parent).set_right_index(current);
+		return node(current);
 	}
 
 	node right(const node& n) { return node(inner(n).right_index()); }
-	void reset_right(const node& n) { return node(inner(n).reset_right_index()); }
-	void set_right(const node& n, const node& right) { return node(inner(n).set_right_index(right)); }
-
-	node parent(const node& n)
-	{
-		check_null_node(n);
-		if(n.is_root())
-			throw std::runtime_error("root node has no parent");
-
-		return node(inner(n).parent_index());
-	}
-
-	void reset_parent(const node& n){ return node(inner(n).reset_parent_index()); }
-	void set_parent(const node& n, const node& parent) { return node(inner(n).set_parent_index(parent)); }
+	void reset_right(const node& n) { inner(n).reset_right_index(); }
+	void set_right(const node& parent, const node& right) { inner(parent).set_right_index(right.index()); }
 
 	const T& value(const node& n) const { return inner(n).value(); }
 	T& value(const node& n) { return const_cast<T&>(const_cast<const binary_tree*>(this)->value(n)); }
@@ -151,15 +120,15 @@ public:
 private:
 	void check_null_node(const node& n) const { if (n.is_null()) throw std::runtime_error("node was null");  }
 
-	const inner_data_node& inner(const node& n) const { check_null_node(n); return nodes_.value(n.index()); }
-	inner_data_node& inner(const node& n)
+	const binary_tree_impl::inner_data_node<T>& inner(const node& n) const { check_null_node(n); return nodes_.value(n.index()); }
+	binary_tree_impl::inner_data_node<T>& inner(const node& n)
 	{
-		return const_cast<inner_data_node&>(const_cast<const binary_tree*>(this)->inner(n));
+		return const_cast<binary_tree_impl::inner_data_node<T>&>(const_cast<const binary_tree*>(this)->inner(n));
 	}
 
 private:
 	node rootNode_;
-	registry<inner_data_node> nodes_;
+	registry<binary_tree_impl::inner_data_node<T>> nodes_;
 };
 
 
@@ -197,12 +166,53 @@ void traverse_preorder_recursive(binary_tree<T>& tree, const typename binary_tre
 }
 
 template<typename T, typename Func>
+void morris_traversal_preorder(binary_tree<T>& tree, typename binary_tree<T>::node rootNode, Func func)
+{
+	while (!rootNode.is_null())
+	{
+		auto left = tree.left(rootNode);
+		if (left.is_null())
+		{
+			func(tree.value(rootNode));
+			rootNode = tree.right(rootNode);
+		}
+		else
+		{
+			// Find inorder predecessor
+			auto predecessor = left;
+			auto right = tree.right(predecessor);
+			while (!(right.is_null() || right == rootNode))
+			{
+				predecessor = right;
+				right = tree.right(right);
+			}
+			
+			if (right == rootNode)
+			{
+				// If the right child of inorder predecessor 
+				// already points to this node
+				tree.reset_right(predecessor);
+				rootNode = tree.right(rootNode);
+			}
+			else
+			{
+				// If right child doesn't point to this node, then print this  
+				// node and make right child point to this node
+				func(tree.value(rootNode));
+				tree.set_right(predecessor, rootNode);
+				rootNode = tree.left(rootNode);
+			}
+		}
+	}
+}
+
+template<typename T, typename Func>
 void traverse_inorder(binary_tree<T>& tree, typename binary_tree<T>::node current, Func func)
 {
 	using node_type = typename binary_tree<T>::node;
 
 	std::vector<node_type> nodes;
-	while (current || !nodes.empty())
+	while (!(current.is_null() && nodes.empty()))
 	{
 		if (!nodes.empty())
 		{
@@ -214,10 +224,50 @@ void traverse_inorder(binary_tree<T>& tree, typename binary_tree<T>::node curren
 			current = tree.right(current);
 		}
 
-		while (current)
+		while (!current.is_null())
 		{
 			nodes.emplace_back(current);
 			current = tree.left(current);
+		}
+	}
+}
+
+template<typename T, typename Func>
+void morris_traversal_inorder(binary_tree<T>& tree, typename binary_tree<T>::node rootNode, Func func)
+{
+	while (!rootNode.is_null())
+	{
+		auto left = tree.left(rootNode);
+		if (left.is_null())
+		{
+			func(tree.value(rootNode));
+			rootNode = tree.right(rootNode);
+		}
+		else
+		{
+			// Find the inorder predecessor of current
+			auto predecessor = left;
+			auto right = tree.right(predecessor);
+			while (!(right.is_null() || right == rootNode))
+			{
+				predecessor = right;
+				right = tree.right(right);
+			}
+
+			if (right.is_null())
+			{
+				// Make current as the right child of its inorder predecessor
+				tree.set_right(predecessor, rootNode);
+				rootNode = tree.left(rootNode);
+			}
+			else
+			{
+				// Revert the changes made in the 'if' part to restore
+				// the original tree i.e., fix the right child of predecessor
+				tree.reset_right(predecessor);
+				func(tree.value(rootNode));
+				rootNode = tree.right(rootNode);
+			}
 		}
 	}
 }
@@ -238,7 +288,7 @@ void traverse_postorder(binary_tree<T>& tree, typename binary_tree<T>::node curr
 	using node_type = typename binary_tree<T>::node;
 
 	std::vector<node_type> nodes;
-	while (current || !nodes.empty())
+	while (!(current.is_null() && nodes.empty()))
 	{
 		if (!nodes.empty())
 		{
@@ -257,11 +307,11 @@ void traverse_postorder(binary_tree<T>& tree, typename binary_tree<T>::node curr
 			}
 		}
 
-		while (current)
+		while (!current.is_null())
 		{
 			nodes.emplace_back(current);
 			node_type right = tree.right(current);
-			if (right)
+			if (!right.is_null())
 			{
 				nodes.emplace_back(right);
 				nodes.emplace_back(current);
@@ -287,7 +337,7 @@ void traverse_depth_first(binary_tree<T>& tree, const typename binary_tree<T>::n
 {
 	using node_type = typename binary_tree<T>::node;
 
-	if (!root) return;
+	if (root.is_null()) return;
 
 	std::queue<node_type> children;
 	children.emplace(root);
@@ -299,9 +349,9 @@ void traverse_depth_first(binary_tree<T>& tree, const typename binary_tree<T>::n
 		func(tree.value(current));
 
 		node_type left = tree.left(current);
-		if (left) children.emplace(left);
+		if (!left.is_null()) children.emplace(left);
 
 		node_type right = tree.right(current);
-		if (right) children.emplace(right);
+		if (!right.is_null()) children.emplace(right);
 	}
 }
