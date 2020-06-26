@@ -58,6 +58,9 @@ void test_binary_tree()
 	std::cout << "\n====== traverse_postorder ======\n";
 	traverse_postorder(btree, root, Printer());
 
+	std::cout << "\n====== morris_traversal_postorder ======\n";
+	morris_traversal_postorder(btree, Printer());
+
 	std::cout << "\n====== traverse_postorder_recursive ======\n";
 	traverse_postorder_recursive(btree, root, Printer());
 

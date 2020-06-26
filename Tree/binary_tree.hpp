@@ -88,6 +88,16 @@ public:
 	}
 
 	node root() const { return rootNode_; }
+	void set_root(const node& n) { rootNode_ = n; }
+	
+	void remove_node(const node& n) { nodes_.erase(n.index()); }
+
+	template<typename... Args>
+	node emplace_root(Args&&... args)
+	{
+		rootNode_ = node(nodes_.emplace(std::forward<Args>(args)...));
+		return rootNode_;
+	}
 
 	template<typename... Args>
 	node emplace_left(const node& parent, Args&&... args)
@@ -183,7 +193,7 @@ void traverse_preorder_recursive(binary_tree<T>& tr, typename binary_tree<T>::no
 
 
 template<typename T, typename Func>
-void morris_traversal_preorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Func func)
+void morris_traversal_preorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
 {
 	while (!root.is_null())
 	{
@@ -259,7 +269,7 @@ void traverse_inorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Fu
 
 
 template<typename T, typename Func>
-void morris_traversal_inorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Func func)
+void morris_traversal_inorder(binary_tree<T>& tr, typename binary_tree<T>::node root, Func&& func)
 {
 	while (!root.is_null())
 	{
@@ -362,6 +372,79 @@ void traverse_postorder(binary_tree<T>& tr, typename binary_tree<T>::node root, 
 {
 	traverse_postorder(const_cast<const binary_tree<T>&>(tr), root,
 		[f = std::forward<Func>(func)](const T& value) { f(const_cast<T&>(value)); });
+}
+
+
+template<typename T, typename Func>
+void morris_traversal_postorder(binary_tree<T>& tr, Func&& func)
+{
+	const auto r = tr.root();
+	if (r.is_null()) return;
+
+	auto root = tr.emplace_root(T());
+	tr.set_left(root, r);
+
+	while (!root.is_null())
+	{
+		auto left = tr.left(root);
+		if (left.is_null())
+		{
+			root = tr.right(root);
+		}
+		else
+		{
+			// Find the inorder predecessor of current
+			auto predecessor = left;
+			auto right = tr.right(predecessor);
+			while (!(right.is_null() || right == root))
+			{
+				predecessor = right;
+				right = tr.right(right);
+			}
+
+			if (right.is_null())
+			{
+				// Make current as the right child of its inorder predecessor
+				tr.set_right(predecessor, root);
+				root = tr.left(root);
+			}
+			else
+			{
+				// predecessor found second time
+				// reverse the right refernces in chain from pred to p
+				auto first = root;
+				auto middle = tr.left(root);
+				while (middle != root)
+				{
+					auto last = tr.right(middle);
+					tr.set_right(middle, first);
+					first = middle;
+					middle = last;
+				}
+
+				// visit the nodes from pred to p
+				// again reverse the right references from pred to p
+				first = root;
+				middle = predecessor;
+				while (middle != root)
+				{
+					func(tr.value(middle));
+					auto last = tr.right(middle);
+					tr.set_right(middle, first);
+					first = middle;
+					middle = last;
+				}
+
+				// Revert the changes made in the 'if' part to restore
+				// the original tree i.e., fix the right child of predecessor
+				tr.reset_right(predecessor);
+				root = tr.right(root);
+			}
+		}
+	}
+
+	tr.remove_node(root);
+	tr.set_root(r);
 }
 
 
