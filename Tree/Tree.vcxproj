@@ -148,6 +148,7 @@
     <ClInclude Include="binary_tree.hpp" />
     <ClInclude Include="graph.hpp" />
     <ClInclude Include="registry.hpp" />
+    <ClInclude Include="tree.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

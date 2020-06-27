@@ -1,4 +1,5 @@
 #include "graph.hpp"
+#include "tree.hpp"
 #include "binary_tree.hpp"
 
 #include <iostream>
@@ -66,6 +67,8 @@ void test_binary_tree()
 
 	std::cout << "\n====== traverse_depth_first ======\n";
 	traverse_depth_first(btree, root, Printer());
+
+	std::cout << std::endl;
 }
 
 void test_graph()
@@ -79,11 +82,28 @@ void test_graph()
 
 	for (const auto n : gr.neighbors_of(center))
 		std::cout << "node: " << gr.value_of(n) << '\n';
+
+	std::cout.flush();
+}
+
+void test_tree()
+{
+	tree<std::string> tr("root");
+
+	auto r = tr.root();
+	auto b1 = tr.emplace_child(r, "child1");
+	auto b2 = tr.emplace_child(r, "child2");
+	auto b3 = tr.emplace_child(r, "child3");
+
+	for (const auto n : tr.children_of(r))
+		std::cout << "child: " << tr.value_of(n) << '\n';
+
+	std::cout.flush();
 }
 
 
 int main()
 {
-	test_binary_tree();
+	test_tree();
 	return 0;
 }

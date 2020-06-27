@@ -82,21 +82,21 @@ public:
 public:
 	template<typename... Args>
 	explicit binary_tree(Args&&... args) 
-		: rootNode_{0}
+		: root_{0}
 	{ 
-		rootNode_ = node(nodes_.emplace(std::forward<Args>(args)...)); 
+		root_ = node(nodes_.emplace(std::forward<Args>(args)...)); 
 	}
 
-	node root() const { return rootNode_; }
-	void set_root(const node& n) { rootNode_ = n; }
+	node root() const { return root_; }
+	void set_root(const node& n) { root_ = n; }
 	
 	void remove_node(const node& n) { nodes_.erase(n.index()); }
 
 	template<typename... Args>
 	node emplace_root(Args&&... args)
 	{
-		rootNode_ = node(nodes_.emplace(std::forward<Args>(args)...));
-		return rootNode_;
+		root_ = node(nodes_.emplace(std::forward<Args>(args)...));
+		return root_;
 	}
 
 	template<typename... Args>
@@ -138,7 +138,7 @@ private:
 	}
 
 private:
-	node rootNode_;
+	node root_;
 	registry<binary_tree_impl::inner_data_node<T>> nodes_;
 };
 

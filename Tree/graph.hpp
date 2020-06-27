@@ -69,9 +69,6 @@ template<typename T>
 class graph
 {
 	friend class graph_node;
-
-	using inner_node = graph_impl::inner_node;
-	using inner_data_node = graph_impl::inner_data_node<T>;
 public:
 	using node_iterator = std::vector<graph_node>::iterator;
 	using const_node_iterator = std::vector<graph_node>::const_iterator;
@@ -155,14 +152,13 @@ public:
 		graph_node node_;
 	};
 
-
 	node_range neighbors_of(const graph_node& n) { return node_range(this, n); }
 	const_node_range neighbors_of(const graph_node& n) const { return const_node_range(this, n); }
 
 private:
-	const inner_node& node_at(std::size_t index) const { return nodes_.value(index); }
-	inner_node& node_at(std::size_t index) { return nodes_.value(index); }
+	const graph_impl::inner_node& node_at(std::size_t index) const { return nodes_.value(index); }
+	graph_impl::inner_node& node_at(std::size_t index) { return nodes_.value(index); }
 
 private:
-	registry<inner_data_node> nodes_;
+	registry<graph_impl::inner_data_node<T>> nodes_;
 };
