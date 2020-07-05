@@ -15,9 +15,9 @@
 template<typename T>
 class forest;
 
-namespace forest_impl {
+enum class forest_edge { leading, trailing };
 
-	enum class forest_edge { leading, trailing };
+namespace forest_impl {
 
 	template<typename NodeType>
 	struct nodes_pair
@@ -448,14 +448,14 @@ namespace forest_impl {
 
 
 template <typename Iter>
-Iter find_edge(Iter it, forest_impl::forest_edge edge)
+Iter find_edge(Iter it, forest_edge edge)
 {
 	while (it.edge() != edge) ++it;
 	return it;
 }
 
 template <typename Iter>
-Iter find_edge_reverse(Iter it, forest_impl::forest_edge edge)
+Iter find_edge_reverse(Iter it, forest_edge edge)
 {
 	while (it.edge() != edge) --it;
 	return it;
@@ -463,7 +463,7 @@ Iter find_edge_reverse(Iter it, forest_impl::forest_edge edge)
 
 
 
-template <typename Iter, forest_impl::forest_edge Edge>
+template <typename Iter, forest_edge Edge>
 class edge_iterator 
 {
 public:
@@ -536,11 +536,11 @@ public:
 	using reverse_iterator = forest_impl::reverse_fullorder_iterator<iterator>;
 	using const_reverse_iterator = forest_impl::reverse_fullorder_iterator<const_iterator>;
 
-	using preorder_iterator = edge_iterator<iterator, forest_impl::forest_edge::leading>;
-	using const_preorder_iterator = edge_iterator<const_iterator, forest_impl::forest_edge::leading>;
+	using preorder_iterator = edge_iterator<iterator, forest_edge::leading>;
+	using const_preorder_iterator = edge_iterator<const_iterator, forest_edge::leading>;
 
-	using postorder_iterator = edge_iterator<iterator, forest_impl::forest_edge::trailing>;
-	using const_postorder_iterator = edge_iterator<const_iterator, forest_impl::forest_edge::trailing>;
+	using postorder_iterator = edge_iterator<iterator, forest_edge::trailing>;
+	using const_postorder_iterator = edge_iterator<const_iterator, forest_edge::trailing>;
 
 	
 	forest() = default;
@@ -585,7 +585,7 @@ public:
 	template<typename... Args>
 	iterator emplace(const_iterator pos, Args&&... args)
 	{
-		iterator result(make_node(std::forward<Args>(args)...), forest_impl::forest_edge::leading);
+		iterator result(make_node(std::forward<Args>(args)...), forest_edge::leading);
 
 		forest_impl::set_next(std::prev(pos), const_iterator(result));
 		forest_impl::set_next(const_iterator(std::next(result)), pos);
@@ -722,14 +722,14 @@ public:
 		forest_impl::set_next(prior, first.base());
 	}
 
-	iterator root() { return iterator(tail(), forest_impl::forest_edge::leading); }
-	const_iterator root() const { return const_iterator(tail(), forest_impl::forest_edge::leading); }
+	iterator root() { return iterator(tail(), forest_edge::leading); }
+	const_iterator root() const { return const_iterator(tail(), forest_edge::leading); }
 
 	iterator begin() { return std::next(root()); }
-	iterator end() { return iterator(tail(), forest_impl::forest_edge::trailing); }
+	iterator end() { return iterator(tail(), forest_edge::trailing); }
 
 	const_iterator cbegin() const { return std::next(root()); }
-	const_iterator cend() const { return const_iterator(tail(), forest_impl::forest_edge::trailing); }
+	const_iterator cend() const { return const_iterator(tail(), forest_edge::trailing); }
 
 	const_iterator begin() const { return cbegin(); }
 	const_iterator end() const { return cend(); }
