@@ -1,6 +1,7 @@
 #include "graph.hpp"
 #include "tree.hpp"
 #include "binary_tree.hpp"
+#include "forest.hpp"
 
 #include <iostream>
 #include <iterator>
@@ -101,9 +102,29 @@ void test_tree()
 	std::cout.flush();
 }
 
+void test_forest()
+{
+	forest<std::string> f;
+	f.emplace(f.end(), "A");
+	f.emplace(f.end(), "E");
+
+	auto a = trailing_of(f.begin());
+	f.emplace(a, "B");
+	f.emplace(a, "C");
+	f.emplace(a, "D");
+
+	forest<std::string>::preorder_iterator first = f.begin();
+	forest<std::string>::preorder_iterator last = f.end();
+
+	for (; first != last; ++first)
+		std::cout << *first << '\n';
+
+	std::cout << std::endl;
+}
+
 
 int main()
 {
-	test_tree();
+	test_forest();
 	return 0;
 }
