@@ -79,6 +79,9 @@ namespace forest_impl {
 
 		explicit forest_iterator(node* node, forest_edge edge)
 			: node_{ node }, edge_{ edge } { assert(node != nullptr); }
+
+		forest_iterator(const forest_const_iterator<T>& other)
+			: node_{ other.node_ }, edge_{ other.edge_ }{  }
 	public:
 
 		using value_type = T;
@@ -162,6 +165,7 @@ namespace forest_impl {
 
 		friend struct set_next_functor<forest_const_iterator<T>>;
 		friend class forest<T>;
+		friend class forest_iterator<T>;
 
 		explicit forest_const_iterator(node* node, forest_edge edge)
 			: node_{ node }, edge_{ edge } { assert(node != nullptr); }
@@ -184,7 +188,7 @@ namespace forest_impl {
 		void make_leading() { edge_ = forest_edge::leading; }
 		void make_trailing() { edge_ = forest_edge::trailing; }
 
-		bool equal_node(const forest_const_iterator& other) const { return node_ == other.edge_; }
+		bool equal_node(const forest_const_iterator& other) const { return node_ == other.node_; }
 
 		const T& operator*() const { return node_->value; }
 		const T* operator->() const { return &(node_->value); }
@@ -543,7 +547,8 @@ public:
 	using const_postorder_iterator = edge_iterator<const_iterator, forest_edge::trailing>;
 
 	
-	forest() = default;
+	forest() : size_{0}, tail_() {}
+	~forest() { clear(); }
 	forest(const forest& other) : forest()
 	{
 		insert(end(), child_iterator(other.begin()), child_iterator(other.end()));
